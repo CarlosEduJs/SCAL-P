@@ -70,6 +70,11 @@ Global flags:
   --guarded         enforce policy and hash checks before install
   --policy string   policy path (default ".scalp/policy.json")
   --ci              set enforcement to block on violation
+
+CI flags:
+  --pr-context string    PR context: fork (default) or internal
+  --allow-scripts        allow install scripts to run (internal only)
+  --output string        report output path (default ".scalp/ci-report.json")
 `)
 }
 
