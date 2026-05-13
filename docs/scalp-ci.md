@@ -9,7 +9,7 @@
 ## What it does
 
 ```bash
-scalp ci [--pm npm] [--output scalp-report.json]
+scalp ci [--pm npm] [--output scalp-report.json] [--pr-context fork] [--allow-scripts]
 ```
 
 Flow, in order:
@@ -24,6 +24,37 @@ Flow, in order:
 8. Writes a structured JSON report
 
 That's it. One command, one exit code, one report.
+
+---
+
+## PR context: fork vs internal
+
+`--pr-context` tells `scalp ci` where the code is coming from. Default is `fork` because that's the safest assumption in automated CI.
+
+| Context | `require_hash` | Install scripts | Use case |
+|---------|----------------|----------------|----------|
+| `fork` (default) | forced on | blocked | PRs from untrusted forks |
+| `internal` | as configured | blocked unless `--allow-scripts` | PRs from team members |
+
+**Fork mode** overrides your policy's `require_hash` to `true` regardless of what's in `.scalp/policy.json`. Every package must have a lockfile integrity entry. A fork could have tampered with the lockfile or removed entries, so this is non-negotiable.
+
+**Internal mode** respects your policy. If you trust your team and have a valid `require_hash: false`, it's fine. Scripts are still blocked by default — you opt in with `--allow-scripts` only if you know what you're doing.
+
+---
+
+## Install scripts: blocked by default
+
+npm packages can run arbitrary code during install via `preinstall`, `install`, and `postinstall` scripts. This is one of the most common supply chain attack vectors.
+
+`scalp ci` passes `--ignore-scripts` to the package manager during install. No code runs. No postinstall hooks. No surprise binaries.
+
+To allow scripts (internal context only):
+
+```bash
+scalp ci --pr-context internal --allow-scripts
+```
+
+This is deliberate: if you need scripts, you should know why. `--allow-scripts` without `--pr-context internal` is still blocked.
 
 ---
 

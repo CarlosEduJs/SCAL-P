@@ -21,6 +21,8 @@ func runCi(args []string) error {
 	fs.StringVar(&cfg.pm, "pm", "npm", "package manager: npm|pnpm")
 	fs.StringVar(&cfg.policyPath, "policy", ".scalp/policy.json", "policy path")
 	output := fs.String("output", ".scalp/ci-report.json", "report output path")
+	prContext := fs.String("pr-context", "fork", "PR context: fork (default) or internal")
+	allowScripts := fs.Bool("allow-scripts", false, "allow install scripts to run (internal only)")
 
 	if err := fs.Parse(args); err != nil {
 		return err
@@ -32,13 +34,18 @@ func runCi(args []string) error {
 		return fmt.Errorf("unsupported package manager: %s", cfg.pm)
 	}
 
+	prType := strings.ToLower(*prContext)
+	if prType != "fork" && prType != "internal" {
+		return fmt.Errorf("invalid PR context: %s (must be fork or internal)", *prContext)
+	}
+
 	pm, err := pkgmanager.Get(cfg.pm)
 	if err != nil {
 		return err
 	}
 
-	ctx := context.Background()
-	pol, polInfo, err := policy.Load(ctx, cfg.policyPath)
+	ctxBg := context.Background()
+	pol, polInfo, err := policy.Load(ctxBg, cfg.policyPath)
 	if err != nil {
 		return err
 	}
@@ -47,11 +54,16 @@ func runCi(args []string) error {
 		slog.Warn("policy not found; allowing with audit")
 	}
 
-	if err := pm.Resolve(ctx, fs.Args()...); err != nil {
+	if prType == "fork" {
+		pol.Trust.RequireHash = true
+		slog.Info("fork context: require_hash enforced, install scripts blocked")
+	}
+
+	if err := pm.Resolve(ctxBg, fs.Args()...); err != nil {
 		return fmt.Errorf("resolve: %w", err)
 	}
 
-	nodes, err := pm.ParseLockfile(ctx)
+	nodes, err := pm.ParseLockfile(ctxBg)
 	if err != nil {
 		return fmt.Errorf("parse lockfile: %w", err)
 	}
@@ -62,10 +74,10 @@ func runCi(args []string) error {
 	}
 
 	if pol.Trust.MinScore > 0 || pol.Trust.RequireHash {
-		lf, lfErr := lockfile.Load(ctx, ".scalp/lockfile.json")
+		lf, lfErr := lockfile.Load(ctxBg, ".scalp/lockfile.json")
 		if lfErr == nil {
 			scorer := trust.NewScorer(trust.DefaultCacheFile)
-			trustVs, tvErr := scorer.Evaluate(ctx, pol, nodes, &lf)
+			trustVs, tvErr := scorer.Evaluate(ctxBg, pol, nodes, &lf)
 			if tvErr != nil {
 				slog.Warn("trust score", "err", tvErr)
 			} else {
@@ -81,32 +93,37 @@ func runCi(args []string) error {
 		return policy.ApplyEnforcement(policy.EnforceBlock, violations)
 	}
 
-	if err := pm.Install(ctx, fs.Args()...); err != nil {
+	installArgs := fs.Args()
+	if prType == "fork" || !*allowScripts {
+		installArgs = append([]string{"--ignore-scripts"}, installArgs...)
+	}
+
+	if err := pm.Install(ctxBg, installArgs...); err != nil {
 		return fmt.Errorf("install: %w", err)
 	}
 
-	depTree, err := pm.GetTree(ctx)
+	depTree, err := pm.GetTree(ctxBg)
 	if err != nil {
 		return fmt.Errorf("get tree: %w", err)
 	}
 
 	lfPath := filepath.Join(".scalp", "lockfile.json")
-	lf, err := lockfile.Load(ctx, lfPath)
+	lf, err := lockfile.Load(ctxBg, lfPath)
 	if err != nil {
 		return fmt.Errorf("load lockfile: %w", err)
 	}
 
-	hashEvents, err := lockfile.SyncWithTree(ctx, &lf, depTree, pm)
+	hashEvents, err := lockfile.SyncWithTree(ctxBg, &lf, depTree, pm)
 	if err != nil {
 		return fmt.Errorf("sync lockfile: %w", err)
 	}
 
 	lf.GeneratedAt = time.Now().UTC().Format(time.RFC3339)
-	if err := lockfile.Save(ctx, lfPath, lf); err != nil {
+	if err := lockfile.Save(ctxBg, lfPath, lf); err != nil {
 		return fmt.Errorf("save lockfile: %w", err)
 	}
 
-	auditViolations, auditEvents, err := lockfile.VerifyAgainstTree(ctx, &lf, depTree, pm)
+	auditViolations, auditEvents, err := lockfile.VerifyAgainstTree(ctxBg, &lf, depTree, pm)
 	if err != nil {
 		return fmt.Errorf("verify tree: %w", err)
 	}
