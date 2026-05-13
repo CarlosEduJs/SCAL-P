@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "trust": {
+    "mode": "audit-only"
+  },
+  "enforcement": {
+    "on_violation": "block",
+    "default_mode": "passthrough"
+  }
+}
