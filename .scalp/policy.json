@@ -1,4 +1,5 @@
 {
+  "$schema": ".scalp/policy.schema.json",
   "version": 1,
   "trust": {
     "mode": "audit-only"

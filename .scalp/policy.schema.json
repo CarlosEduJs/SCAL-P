@@ -1,0 +1,163 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/CarlosEduJs/SCAL-P/main/.scalp/policy.schema.json",
+  "title": "SCAL-P Policy",
+  "description": "Policy file for SCAL-P — controls dependency verification, trust scoring, and enforcement.",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference for editor autocomplete and validation."
+    },
+    "version": {
+      "type": "integer",
+      "description": "Policy schema version. Currently only version 1 is supported.",
+      "default": 1,
+      "examples": [1]
+    },
+    "trust": {
+      "type": "object",
+      "description": "Controls which packages are allowed and how trust scoring works.",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "description": "Package selection mode.",
+          "enum": ["allowlist", "denylist", "audit-only"],
+          "default": "audit-only"
+        },
+        "min_score": {
+          "type": "integer",
+          "description": "Minimum trust score (0-80). Packages below this threshold trigger a violation. 0 disables trust scoring.",
+          "default": 0,
+          "minimum": 0,
+          "maximum": 80,
+          "examples": [60]
+        },
+        "require_hash": {
+          "type": "boolean",
+          "description": "When true, any package without a lockfile integrity entry is an automatic violation, regardless of total score.",
+          "default": false,
+          "examples": [true]
+        }
+      },
+      "additionalProperties": false
+    },
+    "packages": {
+      "type": "object",
+      "description": "Allow and deny rules for package names and patterns.",
+      "properties": {
+        "allow": {
+          "type": "array",
+          "description": "List of allowed packages (in allowlist mode). Empty array blocks everything.",
+          "items": {
+            "$ref": "#/$defs/packageRule"
+          },
+          "default": []
+        },
+        "deny": {
+          "type": "array",
+          "description": "List of denied packages (in denylist mode). Empty array allows everything.",
+          "items": {
+            "$ref": "#/$defs/packageRule"
+          },
+          "default": []
+        }
+      },
+      "additionalProperties": false
+    },
+    "transitive": {
+      "type": "object",
+      "description": "Limits for transitive (indirect) dependencies.",
+      "properties": {
+        "max_depth": {
+          "type": "integer",
+          "description": "Maximum allowed nesting depth. 0 means no limit.",
+          "default": 0,
+          "minimum": 0,
+          "examples": [3]
+        }
+      },
+      "additionalProperties": false
+    },
+    "enforcement": {
+      "type": "object",
+      "description": "Controls what happens when a violation is detected.",
+      "properties": {
+        "on_violation": {
+          "type": "string",
+          "description": "Action to take when a package violates policy.",
+          "enum": ["block", "warn", "log"],
+          "default": "warn"
+        },
+        "default_mode": {
+          "type": "string",
+          "description": "Default install mode when --guarded is not passed.",
+          "enum": ["guarded", "passthrough"],
+          "default": "passthrough"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": ["version"],
+  "additionalProperties": false,
+  "$defs": {
+    "packageRule": {
+      "type": "object",
+      "description": "A rule matching one or more packages by name, pattern, version, or checksum.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Exact package name to match (e.g. 'lodash').",
+          "examples": ["lodash", "@scope/package"]
+        },
+        "pattern": {
+          "type": "string",
+          "description": "Glob pattern for matching packages. Supports * (any), *suffix, prefix*, *substr*, and @scope/*.",
+          "examples": ["*-free", "@scope/*", "*substr*"]
+        },
+        "versions": {
+          "type": "string",
+          "description": "Version constraint (npm semver range).",
+          "examples": ["^4.0.0", ">=1.0.0"]
+        },
+        "checksum": {
+          "type": "string",
+          "description": "Expected SHA-512 integrity hash (sha512-<base64> format).",
+          "examples": ["sha512-a1b2c3d4..."]
+        }
+      },
+      "oneOf": [
+        { "required": ["name"] },
+        { "required": ["pattern"] }
+      ],
+      "additionalProperties": false
+    }
+  },
+  "examples": [
+    {
+      "version": 1,
+      "trust": {
+        "mode": "allowlist",
+        "min_score": 60,
+        "require_hash": true
+      },
+      "packages": {
+        "allow": [
+          { "name": "lodash", "versions": "^4.0.0" }
+        ],
+        "deny": [
+          { "pattern": "*-free" },
+          { "pattern": "@evil-scope/*" }
+        ]
+      },
+      "transitive": {
+        "max_depth": 5
+      },
+      "enforcement": {
+        "on_violation": "block",
+        "default_mode": "guarded"
+      }
+    }
+  ]
+}
