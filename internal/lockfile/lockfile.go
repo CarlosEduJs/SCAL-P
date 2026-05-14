@@ -50,7 +50,7 @@ func Load(ctx context.Context, path string) (Lockfile, error) {
 	return lf, nil
 }
 
-// Save writes the lockfile to disk.
+// Save writes the lockfile to disk atomically.
 func Save(ctx context.Context, path string, lf Lockfile) error {
 	if err := ctxutil.Check(ctx); err != nil {
 		return err
@@ -63,8 +63,14 @@ func Save(ctx context.Context, path string, lf Lockfile) error {
 	if err != nil {
 		return fmt.Errorf("encode lockfile: %w", err)
 	}
-	if err := os.WriteFile(path, data, 0o644); err != nil {
+
+	tmpPath := path + ".tmp"
+	if err := os.WriteFile(tmpPath, data, 0o644); err != nil {
 		return fmt.Errorf("write lockfile: %w", err)
+	}
+	if err := os.Rename(tmpPath, path); err != nil {
+		os.Remove(tmpPath) //nolint:errcheck
+		return fmt.Errorf("rename lockfile: %w", err)
 	}
 	return nil
 }
