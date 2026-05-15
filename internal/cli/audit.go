@@ -12,18 +12,18 @@ import (
 )
 
 func runAudit(args []string) error {
-    fs := newFlagSet("audit")
-    cfg := &cliConfig{}
-    fs.StringVar(&cfg.pm, "pm", "npm", "package manager: npm|pnpm")
-    fs.StringVar(&cfg.policyPath, "policy", ".scalp/policy.json", "policy path")
-    fs.BoolVar(&cfg.ci, "ci", false, "set enforcement to block on violation")
+	fs := newFlagSet("audit")
+	cfg := &cliConfig{}
+	fs.StringVar(&cfg.pm, "pm", "npm", "package manager: npm|pnpm")
+	fs.StringVar(&cfg.policyPath, "policy", ".scalp/policy.json", "policy path")
+	fs.BoolVar(&cfg.ci, "ci", false, "set enforcement to block on violation")
 
-    if err := fs.Parse(args); err != nil {
-        return err
-    }
-    applyDefaults(cfg)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	applyDefaults(cfg)
 
-    cfg.pm = strings.ToLower(cfg.pm)
+	cfg.pm = strings.ToLower(cfg.pm)
 	pm, err := pkgmanager.Get(cfg.pm)
 	if err != nil {
 		return err
@@ -42,10 +42,10 @@ func runAudit(args []string) error {
 		}
 	}()
 
-    enforcement := pol.Enforcement.OnViolation
-    if cfg.ci {
-        enforcement = policy.EnforceBlock
-    }
+	enforcement := pol.Enforcement.OnViolation
+	if cfg.ci {
+		enforcement = policy.EnforceBlock
+	}
 
 	if polInfo.MissingPolicy {
 		slog.Warn("policy not found; allowing with audit")

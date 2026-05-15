@@ -131,7 +131,7 @@ func TestRequireHash(t *testing.T) {
 		lf := lockfile.Lockfile{
 			LockVersion: 1,
 			Packages: map[string]lockfile.LockEntry{
-				"no-hash@1.0.0": {},
+				"no-hash@1.0.0":   {},
 				"low-score@0.1.0": {Integrity: "sha512-abc"},
 			},
 		}

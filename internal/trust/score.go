@@ -20,11 +20,11 @@ import (
 )
 
 const (
-	ptsHashVerified  = 30
-	ptsMaturity      = 15
-	ptsMaxDownloads  = 20
-	ptsNoCVEs        = 15
-	defaultWorkers   = 10
+	ptsHashVerified = 30
+	ptsMaturity     = 15
+	ptsMaxDownloads = 20
+	ptsNoCVEs       = 15
+	defaultWorkers  = 10
 )
 
 type ScoreBreakdown struct {
@@ -35,9 +35,9 @@ type ScoreBreakdown struct {
 }
 
 type PackageScore struct {
-	PackageID  string         `json:"package_id"`
-	Total      int            `json:"total"`
-	Breakdown  ScoreBreakdown `json:"breakdown"`
+	PackageID string         `json:"package_id"`
+	Total     int            `json:"total"`
+	Breakdown ScoreBreakdown `json:"breakdown"`
 }
 
 type Scorer struct {
@@ -325,8 +325,8 @@ func (s *Scorer) fetchAuditCVEs(ctx context.Context) map[string][]string {
 }
 
 type npmAuditVulnerability struct {
-	Name       string `json:"name"`
-	Severity   string `json:"severity"`
+	Name     string `json:"name"`
+	Severity string `json:"severity"`
 }
 
 type npmAuditResponse struct {

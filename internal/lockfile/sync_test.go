@@ -429,9 +429,9 @@ func TestAdversarial_optionalPlatformDep(t *testing.T) {
 		Name:    "test",
 		Version: "1.0",
 		Dependencies: map[string]pkgmanager.DependencyRef{
-			"pkg": {Version: "1.0"},
+			"pkg":                        {Version: "1.0"},
 			"lightningcss-android-arm64": {Version: "1.0.0"},
-			"@esbuild/linux-ia32":       {Version: "1.0.0"},
+			"@esbuild/linux-ia32":        {Version: "1.0.0"},
 		},
 	}
 
