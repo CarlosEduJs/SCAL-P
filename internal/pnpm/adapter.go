@@ -16,28 +16,24 @@ import (
 	"scal-p/internal/pkgmanager"
 )
 
-// execCommand is the function used to create external commands.
-// Override in tests to mock command execution.
-var execCommand = exec.CommandContext
-
 // ExecFunc matches the signature of exec.CommandContext.
 type ExecFunc func(ctx context.Context, name string, arg ...string) *exec.Cmd
 
-// SetExecCommand overrides the command factory for testing.
-// Returns the previous function for restore.
-func SetExecCommand(fn ExecFunc) ExecFunc {
-	old := execCommand
-	execCommand = fn
-	return old
+// Adapter implements pkgmanager.PackageManager for pnpm.
+type Adapter struct {
+	// CommandContext creates external commands. Override in tests to mock.
+	CommandContext ExecFunc
 }
 
-// Adapter implements pkgmanager.PackageManager for pnpm.
-type Adapter struct{}
+// New creates a new pnpm adapter with the default command factory.
+func New() *Adapter {
+	return &Adapter{CommandContext: exec.CommandContext}
+}
 
 // Register registers the pnpm adapter with the package manager registry.
 func Register() {
 	pkgmanager.Register("pnpm", func() pkgmanager.PackageManager {
-		return &Adapter{}
+		return New()
 	})
 }
 
@@ -51,7 +47,7 @@ func (a *Adapter) Resolve(ctx context.Context, args ...string) error {
 	}
 
 	cmdArgs := append([]string{"install", "--lockfile-only"}, args...)
-	cmd := execCommand(ctx, "pnpm", cmdArgs...)
+	cmd := a.CommandContext(ctx, "pnpm", cmdArgs...)
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("pnpm install --lockfile-only failed: %w", err)
@@ -112,7 +108,7 @@ func (a *Adapter) GetTree(ctx context.Context) (pkgmanager.DependencyTree, error
 }
 
 func (a *Adapter) getTreeViaLs(ctx context.Context) (pkgmanager.DependencyTree, error) {
-	cmd := execCommand(ctx, "pnpm", "ls", "--json", "--depth", "Infinity")
+	cmd := a.CommandContext(ctx, "pnpm", "ls", "--json", "--depth", "Infinity")
 	cmd.Stderr = os.Stderr
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -171,7 +167,7 @@ func (a *Adapter) Install(ctx context.Context, args ...string) error {
 		return err
 	}
 	cmdArgs := append([]string{"install"}, args...)
-	cmd := execCommand(ctx, "pnpm", cmdArgs...)
+	cmd := a.CommandContext(ctx, "pnpm", cmdArgs...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
