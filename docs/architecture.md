@@ -1,6 +1,6 @@
 # Architecture
 
-**How the pieces fit together — data flow from CLI to audit log. v0.3 adds yarn (Berry) and bun adapters.**
+**How the pieces fit together — data flow from CLI to audit log**
 
 > SCAL-P is not a daemon, not a proxy, not a plugin. It's a CLI tool that wraps your package manager. Every invocation is stateless: load policy, resolve, evaluate, act, log, exit.
 
