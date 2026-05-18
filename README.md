@@ -18,9 +18,7 @@ scalp verify --artifact <file> --checksum <file>     # verify release artifact
 
 npm/pnpm/yarn/bun run arbitrary code during install. SCAL-P flips the order: policy before trust, hash after install, audit always.
 
-v0.2 added trust scores (numeric risk dimension), pnpm support, a dedicated CI command, and the ability to verify SCAL-P's own releases (dogfooding).
-
-v0.3 adds yarn (Berry v2+) and bun support, with direct lockfile parsing for both.
+v0.2 added trust scores (numeric risk dimension), pnpm, bun and yarn (Berry v2+) support, a dedicated CI command, and the ability to verify SCAL-P's own releases (dogfooding).
 
 ---
 
