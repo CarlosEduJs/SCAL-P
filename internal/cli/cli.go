@@ -11,15 +11,19 @@ import (
 	"time"
 
 	"scal-p/internal/audit"
+	"scal-p/internal/bun"
 	"scal-p/internal/npm"
 	"scal-p/internal/pnpm"
 	"scal-p/internal/policy"
 	"scal-p/internal/version"
+	"scal-p/internal/yarn"
 )
 
 func init() {
 	npm.Register()
 	pnpm.Register()
+	yarn.Register()
+	bun.Register()
 }
 
 func Run(args []string) error {
@@ -81,7 +85,7 @@ Commands:
   checksum      generate SHA-512 checksums for files
 
 Global flags:
-  --pm string       package manager (auto-detected: npm|pnpm)
+  --pm string       package manager (auto-detected: npm|pnpm|yarn|bun)
   --guarded         enforce policy and hash checks before install
   --policy string   policy path (default ".scalp/policy.json")
   --ci              set enforcement to block on violation

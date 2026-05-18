@@ -114,7 +114,7 @@ func Flatten(tree DependencyTree) ([]PackageNode, error) {
 // IsSupported reports whether the package manager name is known.
 func IsSupported(pm string) bool {
 	switch pm {
-	case "npm", "pnpm":
+	case "npm", "pnpm", "yarn", "bun":
 		return true
 	default:
 		return false
